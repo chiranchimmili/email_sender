@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import smtplib
 import pandas as pd
 from email.mime.multipart import MIMEMultipart
@@ -8,13 +10,14 @@ excel_filepath = r'C:\Users\Name\Documents\emails.xlsx'    # Enter filepath of e
 column = 'Emails'                                          # Enter title of column containing emails
 excel_emails = pd.read_excel(excel_filepath)
 emails = excel_emails[column].values
+session = smtplib.SMTP('smtp.gmail.com:587')
 
 # Email Parameters
-sender = 'sender@email.com'          # Enter sender email
-password = input('Enter password')   # Enter password when running program
-subject = 'subject'                  # Enter email subject
-content = 'message'                  # Enter email message
-image_filepath = r'C:\Users\Name\Pictures\Saved Pictures\coconut.jpg'   # Enter filepath of image to be embedded (type 'none' if no image)
+sender = 'sender@email.com'          
+password = input('Enter password')   
+subject = 'subject'                 
+content = 'message'                  
+image_filepath = r'C:\Users\Name\Pictures\Saved Pictures\coconut.jpg'   
 
 # Create Email
 msg = MIMEMultipart('related')
@@ -24,8 +27,9 @@ msg_alt = MIMEMultipart('alternative')
 msg.attach(msg_alt)
 msg_text = MIMEText(content, 'plain', 'utf-8')
 msg_alt.attach(msg_text)
-msg_text = MIMEText(content + '<br><img src="cid:image1"><br>', 'html', 'utf-8')   # Use HTML to change content settings (bold, italicize)
+msg_text = MIMEText(content + '<br><img src="cid:image1"><br>', 'html', 'utf-8')   
 msg_alt.attach(msg_text)
+messages = []
 
 # Embed Image into Email
 if "none" not in image_filepath:
@@ -50,11 +54,20 @@ else:
 server.starttls()
 server.login(sender, password)
 
-# Send Emails
 for email in emails:
     msg['To'] = email
     server.sendmail(sender, email, msg.as_string())
 
-# Close Mail Server
+for message in messages:
+    receiver = message[0]
+    headers = ["from: " + sender,
+            "subject: " + subject,
+            "to: " + receiver,
+            "mime-version: 1.0",
+            "content-type: text/html"]
+    headers = "\r\n".join(headers)
+    body = message[1]
+    session.sendmail(sender, receiver, headers + "\r\n\r\n" + body)
+
 server.close()
 print('Emails sent')
